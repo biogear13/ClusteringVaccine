@@ -179,7 +179,6 @@ def get_graphs(coordinates, subsetdf, working_df):
     variable_choice = st.selectbox('Choose Variable', variable, 0)
     st.sidebar.header('Chosen Variable')
     st.sidebar.text(variable_choice)
-    subsetdf = working_df[working_df['Municipal Code'].isin(subsetdf['Municipal Code'])]
     get_histogram(variable_choice, subsetdf)
     get_map(coordinates, working_df, variable_choice, subsetdf)
     return
@@ -372,7 +371,7 @@ province_choice = st.sidebar.selectbox('Province',
     province_options(region_choice), 0)
 coordinates = get_coordinates(region_choice, province_choice)
 subsetdf = get_subsetdf(region_choice, province_choice, working_df)
-working_df = update_data(subsetdf, working_df, original_df)
+#working_df = update_data(subsetdf, working_df, original_df)
 if (st.sidebar.button('Click for Graphs')):
     get_graphs(coordinates, subsetdf, working_df)
 elif (st.sidebar.button('Click for Info')):
