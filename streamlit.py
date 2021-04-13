@@ -13,13 +13,14 @@ import plotly.express as px
 import seaborn as sns
 from sklearn.cluster import KMeans, AgglomerativeClustering
 from sklearn.preprocessing import StandardScaler
+from matplotlib.colors import ListedColormap, LinearSegmentedColormap
 import streamlit as st
 
 @st.cache(allow_output_mutation=True)
 def get_data():
-    data = gpd.read_file('capstone.shp')
-    data = data.rename(columns = {'municipalc':'Municipal Code',
-                                     'municipali':'Municipality',
+    data = gpd.read_file('capstone1.shp')
+    data = data.rename(columns = {'Municipali':'Municipal Code',
+                                     'Municipa_1':'Municipality',
                                      'Mun_Povert':'Poverty Incidence',
                                      'beds_per_c': 'Health Facility Beds per 1000 people',
                                      'current_ca': 'Current New Cases',
@@ -43,6 +44,7 @@ def get_weights(df):
     wknn1 = KNN.from_dataframe(df)
     wfixed = weights.util.attach_islands(wq, wknn1)
     return wknn1
+
 
 # compute the  local spatial autocorrelation
 def compute_lsa(df, wq):
@@ -81,6 +83,7 @@ def compute_lsa(df, wq):
         df[lsa[i]] = labels
     return df
 
+
 @st.cache
 def stdScaler(df):
     scaler = StandardScaler()
@@ -106,32 +109,36 @@ def kmeans_clustering(df):
     table = df.groupby(['Cluster Label'])['Cluster Label'].count()
     if table[0]>table[1]:
         group1 = df[df['Cluster Label']==1]
-        group1['Cluster Label'] = group1['Cluster Label'].replace(1, 'Priority 1')
+        group1['Cluster Label'] = group1['Cluster Label'].replace(1, '1. Metropolis-like')
         other = df[df['Cluster Label']==0]
     else:
         group1 = df[df['Cluster Label']==0]
-        group1['Cluster Label'] = group1['Cluster Label'].replace(0, 'Priority 1')
+        group1['Cluster Label'] = group1['Cluster Label'].replace(0, '1. Metropolis-like')
         other = df[df['Cluster Label']==1]
     other['Cluster Label'] = produceClusters(2, other[variable])
     table = other.groupby(['Cluster Label'])['Cluster Label'].count()
     if table[0]>table[1]:
         group2 = other[other['Cluster Label']==1]
-        group2['Cluster Label'] = group2['Cluster Label'].replace(1, 'Priority 2')
+        group2['Cluster Label'] = group2['Cluster Label'].replace(1, '2. City-like')
         other = other[other['Cluster Label']==0]
     else:
         group2 = other[other['Cluster Label']==0]
-        group2['Cluster Label'] = group2['Cluster Label'].replace(0, 'Priority 2')
+        group2['Cluster Label'] = group2['Cluster Label'].replace(0, '2. City-like')
         other = other[other['Cluster Label']==1]
     other['Cluster Label'] = produceClusters(2, other[variable])
     table = other.groupby(['Cluster Label'])['Cluster Label'].count()
     if table[0]>table[1]:
-        other['Cluster Label'] = other['Cluster Label'].replace(1, 'Priority 3')
-        other['Cluster Label'] = other['Cluster Label'].replace(0, 'Priority 4')
+        other['Cluster Label'] = other['Cluster Label'].replace(1, '3. Semiurban-like')
+        other['Cluster Label'] = other['Cluster Label'].replace(0, '4. Rural-like')
     else:
-        other['Cluster Label'] = other['Cluster Label'].replace(0, 'Priority 3')
-        other['Cluster Label'] = other['Cluster Label'].replace(1, 'Priority 4')
+        other['Cluster Label'] = other['Cluster Label'].replace(0, '3. Semiurban-like')
+        other['Cluster Label'] = other['Cluster Label'].replace(1, '4. Rural-like')
     kmeans1 = pd.concat([group1, group2, other], ignore_index = True)
     return kmeans1
+
+@st.cache
+def get_custom_color_palette():
+    return ListedColormap(['darkslategray', 'slategrey', 'darkgrey', 'gainsboro'])
 
 @st.cache
 def region_options():
@@ -171,7 +178,7 @@ def get_graphs(coordinates, subsetdf, working_df):
             'Health Facility Beds per 1000 people',
             'Total Cases per 100,000 people',
             'Current New Cases per 100,000 people',
-            'Case Fatality Ratio',
+            #'Case Fatality Ratio',
             'No. People per 30 sq m',
             'Elderly Individuals at Risk',
             'Poverty Incidence'
@@ -197,12 +204,24 @@ def get_histogram(variable_choice, subsetdf):
 def get_map(coordinates, working_df, variable_choice, subsetdf):
     st.header('Area Map')
     map = st.selectbox('Choose the Map', ['Chloropleth Map of Variable',
-    'Local Spatial Autocorrelation Result', 'KMeans Clustering Result'], 0 )
+    'Local Spatial Autocorrelation Result',
+    'KMeans Clustering Result'], 0 )
     if map == 'Chloropleth Map of Variable':
+        st.text('Chloropleth map shows the distribution of our selected variable')
         chloropleth(coordinates, working_df, variable_choice, subsetdf)
     elif map=='Local Spatial Autocorrelation Result':
+        st.text('Local Spatial Autocorrelation is an analysis to identify local clusters and local spatial outliers')
+        st.text('Hot spot = area of significantly high values')
+        st.text('Doughnut = area of low values surrounded by area of higher  values')
+        st.text('Cold spot = area of significantly low values')
+        st.text('Diamond = area of high values surrounded by area of lower  values')
         LSA(coordinates, working_df, variable_choice, subsetdf)
     else:
+        st.text('Kmeans clustering is a machine learning algorithm to group together municipalities with similar characteristics')
+        st.text('Metropolis-like = highest in terms of cases, population and resources')
+        st.text('City-like = second highest in terms of cases, population and resources')
+        st.text('Semiurban-like = low in terms of cases, population and resources ')
+        st.text('Rural-like = lowest in terms of cases, population and resources')
         cluster(coordinates, working_df, variable_choice, subsetdf)
     return
 
@@ -247,28 +266,31 @@ def LSA(coordinates, working_df, variable_choice, subsetdf):
 
 @st.cache(suppress_st_warning=True)
 def choice(variable_choice):
+    lchoice = variable_choice
     if variable_choice == 'Poverty Incidence' :
-        choice  = 'LSA: Poverty Incidence'
+        lchoice  = 'LSA: Poverty Incidence'
     elif variable_choice == 'Health Facility Beds per 1000 people':
-        choice = 'LSA: Health Facility Beds per 1000 people'
+        lchoice = 'LSA: Health Facility Beds per 1000 people'
     elif variable_choice == 'Total Cases per 100,000 people':
-        choice = 'LSA: Total Cases per 100,000 people'
+        lchoice = 'LSA: Total Cases per 100,000 people'
     elif variable_choice == 'Current New Cases per 100,000 people':
-        choice = 'LSA: Current New Cases per 100,000 people'
-    elif variabble_choice == 'Case Fatality Ratio':
-        choice = 'LSA: Case Fatality Ratio'
+        lchoice = 'LSA: Current New Cases per 100,000 people'
+    elif variable_choice == 'Case Fatality Ratio':
+        lchoice = 'LSA: Case Fatality Ratio'
     elif variable_choice == 'LSA: No. People per 30 sq m':
-        choice = 'LSA: No. People per 30 sq m'
+        lchoice = 'LSA: No. People per 30 sq m'
     elif variable_choice == 'Elderly Individuals at Risk':
-        choice = 'LSA: Elderly Individuals at Risk'
-    return choice
+        lchoice = 'LSA: Elderly Individuals at Risk'
+    return lchoice
 
 
 @st.cache(suppress_st_warning=True)
 def cluster(coordinates, working_df, variable_choice, subsetdf):
     fig, ax = plt.subplots(1, figsize=(12, 9))
-    working_df.plot(column='Cluster Label', cmap='viridis', linewidth=0.5, ax=ax,
-    edgecolor='0.9', legend_kwds = {'loc' : 'upper left'}, legend = True, alpha = 0.3)
+    hmap = ListedColormap(['darkslategray', 'slategrey', 'darkgrey', 'gainsboro'])
+    working_df.plot(column='Cluster Label', cmap=hmap, linewidth=0, ax=ax,
+    #order = ['Metropolis-like', 'City-like', 'Semiurban-like', 'Rural-like'],
+    edgecolor='0.9', legend_kwds = {'loc' : 'upper left'}, legend = True)
     province.boundary.plot(ax=ax, linewidth = 0.75, edgecolor='0.1')
     regions.boundary.plot(ax=ax, linewidth = 1, edgecolor='sandybrown')
     xlim = ([coordinates[0], coordinates[2]])
@@ -372,7 +394,7 @@ province_choice = st.sidebar.selectbox('Province',
 coordinates = get_coordinates(region_choice, province_choice)
 subsetdf = get_subsetdf(region_choice, province_choice, working_df)
 #working_df = update_data(subsetdf, working_df, original_df)
-if (st.sidebar.button('Click for Graphs')):
-    get_graphs(coordinates, subsetdf, working_df)
-elif (st.sidebar.button('Click for Info')):
+#if (st.sidebar.button('Click for Graphs')):
+get_graphs(coordinates, subsetdf, working_df)
+if (st.sidebar.button('Click for Info')):
     get_info()
