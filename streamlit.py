@@ -344,7 +344,7 @@ def update_data(subsetdf, working_df, original_df):
         working_df = original_df.copy()
     return working_df, municipal_code
 
-@st.cache(suppress_st_warning=True)
+#@st.cache(suppress_st_warning=True)
 def update(working_df, municipal_code, hf, tc, cc, cr, no, er, pi):
     df = working_df.set_index('Municipal Code')
     df.at[municipal_code, 'Health Facility Beds per 1000 people'] = hf
