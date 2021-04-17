@@ -16,7 +16,7 @@ from sklearn.preprocessing import StandardScaler
 from matplotlib.colors import ListedColormap, LinearSegmentedColormap
 import streamlit as st
 
-@st.cache(allow_output_mutation=True)
+#@st.cache(allow_output_mutation=True)
 def get_data():
     data = gpd.read_file('capstone1.shp')
     data = data.rename(columns = {'Municipali':'Municipal Code',
@@ -84,18 +84,18 @@ def compute_lsa(df, wq):
     return df
 
 
-@st.cache
+#@st.cache
 def stdScaler(df):
     scaler = StandardScaler()
     return scaler.fit_transform(df)
 
-@st.cache
+#@st.cache
 def produceClusters(n_clusters, scaled_df, random_state=13):
     kmeans = KMeans(n_clusters=n_clusters, random_state=random_state)
     kmeans.fit(scaled_df)
     return kmeans.predict(scaled_df)
 
-@st.cache
+#@st.cache
 def kmeans_clustering(df):
     variable = [ 'Poverty Incidence',
     'Health Facility Beds per 1000 people',
@@ -136,17 +136,17 @@ def kmeans_clustering(df):
     kmeans1 = pd.concat([group1, group2, other], ignore_index = True)
     return kmeans1
 
-@st.cache
+#@st.cache
 def get_custom_color_palette():
     return ListedColormap(['darkslategray', 'slategrey', 'darkgrey', 'gainsboro'])
 
-@st.cache
+#@st.cache
 def region_options():
     list = regions['Region'].unique()
     list = np.insert(list, 0, 'All Regions')
     return list
 
-@st.cache
+#@st.cache
 def province_options(region_choice):
     province  = original_df[original_df['Region']==region_choice]
     list = province['Province'].unique()
@@ -190,7 +190,7 @@ def get_graphs(coordinates, subsetdf, working_df):
     get_map(coordinates, working_df, variable_choice, subsetdf)
     return
 
-@st.cache(suppress_st_warning=True)
+#@st.cache(suppress_st_warning=True)
 def get_histogram(variable_choice, subsetdf):
     st.header('Histogram of the Variable')
     #minv, maxv = st.slider('Variable Range', subsetdf[variable_choice].min(), subsetdf[variable_choice].max(), (subsetdf[variable_choice].min(), subsetdf[variable_choice].max()))
@@ -200,7 +200,7 @@ def get_histogram(variable_choice, subsetdf):
     st.plotly_chart(f)
     return
 
-@st.cache(suppress_st_warning=True)
+#@st.cache(suppress_st_warning=True)
 def get_map(coordinates, working_df, variable_choice, subsetdf):
     st.header('Area Map')
     map = st.selectbox('Choose the Map', ['Chloropleth Map of Variable',
@@ -225,7 +225,7 @@ def get_map(coordinates, working_df, variable_choice, subsetdf):
         cluster(coordinates, working_df, variable_choice, subsetdf)
     return
 
-@st.cache(suppress_st_warning=True)
+#@st.cache(suppress_st_warning=True)
 def chloropleth(coordinates, working_df, variable_choice, subsetdf):
     fig, ax = plt.subplots(1, figsize=(12, 9))
     working_df.plot(column=variable_choice, cmap='Blues', linewidth=0.35, ax=ax,
@@ -243,7 +243,7 @@ def chloropleth(coordinates, working_df, variable_choice, subsetdf):
     st.write(subsetdf[variable])
     return
 
-@st.cache(suppress_st_warning=True)
+#@st.cache(suppress_st_warning=True)
 def LSA(coordinates, working_df, variable_choice, subsetdf):
     lsa_choice = choice(variable_choice)
     hmap = ListedColormap([ 'grey', 'red', 'lightblue', 'blue', 'pink'])
@@ -264,7 +264,7 @@ def LSA(coordinates, working_df, variable_choice, subsetdf):
     st.write(subsetdf[variable])
     return
 
-@st.cache(suppress_st_warning=True)
+#@st.cache(suppress_st_warning=True)
 def choice(variable_choice):
     lchoice = variable_choice
     if variable_choice == 'Poverty Incidence' :
@@ -284,7 +284,7 @@ def choice(variable_choice):
     return lchoice
 
 
-@st.cache(suppress_st_warning=True)
+#@st.cache(suppress_st_warning=True)
 def cluster(coordinates, working_df, variable_choice, subsetdf):
     fig, ax = plt.subplots(1, figsize=(12, 9))
     hmap = ListedColormap(['darkslategray', 'slategrey', 'darkgrey', 'gainsboro'])
@@ -357,7 +357,7 @@ def update(working_df, municipal_code, hf, tc, cc, cr, no, er, pi):
     working_df = df.reset_index()
     return working_df
 
-@st.cache(suppress_st_warning=True)
+#@st.cache(suppress_st_warning=True)
 def get_info():
     st.header("Variables Used in The Model")
     st.markdown("The following are the variables used in the classification model")
