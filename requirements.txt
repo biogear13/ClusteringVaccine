@@ -7,7 +7,7 @@ seaborn == 0.11.0
 libpysal == 4.4.0
 mapclassify == 2.4.2
 esda == 2.3.6
-skleaa == 0.23.2
+sklearn == 0.23.2
 
 
 
